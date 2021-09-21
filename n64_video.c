@@ -77,7 +77,6 @@ bool video_init()
     //Create the game surface and load/apply palette.
     init_surface(&game_surface, SCREEN_WIDTH, SCREEN_HEIGHT);
     set_palette_on_surface(&game_surface);
-    game_surface.format->palette->refcount = GAME_PALETTE;
     memcpy(_palette1, game_surface.format->palette->colors, sizeof(uint16_t) * 16);
     data_cache_hit_writeback_invalidate(_palette1, sizeof(uint16_t) * 16);
     rdl_push(dl,
@@ -90,7 +89,6 @@ bool video_init()
     init_surface(&text_surface, SCREEN_WIDTH * 2, SCREEN_HEIGHT * 2);
     set_palette_on_surface(&text_surface);
     video_fill_surface_with_black(&text_surface);
-    text_surface.format->palette->refcount = TEXT_PALETTE;
     memcpy(_palette2, text_surface.format->palette->colors, sizeof(uint16_t) * 16);
     data_cache_hit_writeback_invalidate(_palette2, sizeof(uint16_t) * 16);
     rdl_push(dl,
@@ -142,8 +140,7 @@ void video_update()
     VideoSurface *src = is_game_mode ? &game_surface : &text_surface;
     uint8_t pal_slot = is_game_mode ? GAME_PALETTE : TEXT_PALETTE;
     data_cache_hit_writeback_invalidate(src->pixels,  src->w * src->h);
-    while (!(disp = display_lock())) {}
-
+ 
     //We draw the screen from top to bottom.
     //We can only draw 2048bytes per loop and for simplicity we want it to be a multiple
     //of the width.
@@ -154,8 +151,9 @@ void video_update()
     assert(chunk_size <= 2048);
     assert(y_per_loop > 0);
 
+    while (!(disp = display_lock())) {}
     rdp_attach_display(disp);
-    rdp_set_clipping(0, 0, N64_MIN(SCREEN_WIDTH, src->w),240);
+    rdp_set_clipping(0, 0, N64_MIN(SCREEN_WIDTH, src->w), 240);
 
     rdl_push(dl,
         RdpSyncPipe(),
@@ -165,13 +163,12 @@ void video_update()
     uint8_t *ptr = src->pixels;
     while(current_y < 240)
     {
-
         //Load y_per_loop * x_per_loop pixels into TMEM, and apply palette from pal_slot
         //Then draw to framebuffer
         rdl_push(dl,
             MRdpLoadTex8bpp(0, (uint32_t)ptr, x_per_loop, y_per_loop, x_per_loop, RDP_AUTO_TMEM_SLOT(0), RDP_AUTO_PITCH),
             MRdpSetTile8bpp(1, RDP_AUTO_TMEM_SLOT(0), RDP_AUTO_PITCH, RDP_AUTO_TMEM_SLOT(pal_slot), x_per_loop, y_per_loop),
-            //Draw the first line twice. (1/5 lines is drawn twice, so that over 200 lines, this will scale to 240 on screen)
+            //Draw the first line. (1/5 lines is drawn twice, so that over 200 lines, this will scale to 240 on screen)
             RdpTextureRectangle1I(1, 0, current_y + 0, 0 + x_per_loop, current_y + 1),
             RdpTextureRectangle2I(0, 0, 4, 1),
             //Draw the rest of the lines (including the above line)
@@ -398,7 +395,7 @@ void video_update_palette(int palette_index, SDL_Color new_color)
 {
     SDL_SetPaletteColors(game_surface.format->palette, &new_color, palette_index, 1);
     memcpy(_palette1, game_surface.format->palette->colors, sizeof(uint16_t) * 16);
-    //Update the palette into TMEM
+    //Update the palette in TMEM
     rdl_push(dl,
         RdpSyncTile(),
         MRdpLoadPalette16(2, (uint32_t)_palette1, RDP_AUTO_TMEM_SLOT(GAME_PALETTE)),
