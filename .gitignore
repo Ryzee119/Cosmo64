@@ -1,0 +1,5 @@
+.vscode
+build
+libdragon
+filesystem
+*.z64

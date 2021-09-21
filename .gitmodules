@@ -1,0 +1,3 @@
+[submodule "cosmo-engine"]
+	path = cosmo-engine
+	url = https://github.com/yuv422/cosmo-engine.git
