@@ -38,10 +38,9 @@ void cosmo_audio_init()
     audioConfig.enabled = true;
     MikMod_RegisterAllDrivers();
     MikMod_RegisterAllLoaders();
-    md_mode |= DMODE_16BITS;
-    md_mode |= DMODE_SOFT_MUSIC;
-    md_mode |= DMODE_SOFT_SNDFX;
-    md_mixfreq = audio_get_frequency();
+    md_mode &= ~DMODE_SURROUND
+    md_mode |= DMODE_STEREO | DMODE_16BITS | DMODE_SOFT_MUSIC | DMODE_SOFT_SNDF;
+    md_mixfreq = AUDIO_DESIRED_SAMPLE_RATE;
     MikMod_Init("");
     MikMod_SetNumVoices(-1, 5);
     MikMod_EnableOutput();
@@ -49,7 +48,6 @@ void cosmo_audio_init()
     audio_timer = new_timer(TIMER_TICKS(1000000 / 60), TF_CONTINUOUS, audio_service);
 
     music_init();
-    audioConfig.enabled = true;
 }
 
 void audio_shutdown()
@@ -61,6 +59,8 @@ void audio_shutdown()
 
     delete_timer(audio_timer);
     MikMod_DisableOutput();
+    sfx_close();
+    music_close();
     audio_close();
     MikMod_Exit();
     audioConfig.enabled = false;
