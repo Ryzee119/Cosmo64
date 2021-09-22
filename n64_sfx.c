@@ -23,6 +23,7 @@ typedef struct Sfx
     uint8_t *abuf;
     MREADER *mem_reader;
     SAMPLE *sample;
+    uint32_t voice;
 } Sfx;
 
 Sfx *sfxs;
@@ -324,8 +325,10 @@ void load_sfx()
 
 void play_sfx(int sfx_number)
 {
-    if (sfxs[sfx_number].sample)
-        Sample_Play(sfxs[sfx_number].sample, 0, 0);
+    if (sfxs[sfx_number].sample && Voice_Stopped(sfxs[sfx_number].voice))
+    {
+        sfxs[sfx_number].voice = Sample_Play(sfxs[sfx_number].sample, 0, 0);
+    }
 }
 
 void sfx_close()
