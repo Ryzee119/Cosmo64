@@ -3,7 +3,6 @@ COSMO_DIR = cosmo-engine/src
 
 include n64.mk
 
-N64_CFLAGS = -DN64 -falign-functions=32 -ffunction-sections -fdata-sections -std=gnu99 -march=vr4300 -mtune=vr4300 -O2 -fdiagnostics-color=always -I$(ROOTDIR)/mips64-elf/include
 CFLAGS += -I$(COSMO_DIR) -In64/SDL -I$(N64_ROOTDIR)/include
 LDFLAGS += -L$(N64_ROOTDIR)/lib -lmikmod
 
