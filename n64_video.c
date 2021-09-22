@@ -7,11 +7,9 @@
 #include "tile.h"
 #include "input.h"
 #include "b800_font.h"
-#include "n64/rdl.h"
-#include "n64/rdp_commands.h"
 
-#define N64_MIN(a,b) (((a)<(b))?(a):(b))
-#define N64_MAX(a,b) (((a)>(b))?(a):(b))
+#define N64_MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define N64_MAX(a, b) (((a) > (b)) ? (a) : (b))
 
 #define VideoSurface SDL_Surface
 
@@ -19,14 +17,14 @@ VideoSurface game_surface;
 VideoSurface text_surface;
 
 static display_context_t disp = 0;
+static ugfx_buffer_t *render_commands;
+static uint32_t display_width;
+static uint32_t display_height;
 
-#define NUM_DISPLAY_LISTS 2
-static RdpDisplayList *dls[NUM_DISPLAY_LISTS] = {NULL};
-static RdpDisplayList *dl;
 static uint16_t *_palette1;
 static uint16_t *_palette2;
-static const uint8_t GAME_PALETTE = 0;
-static const uint8_t TEXT_PALETTE = 1;
+static const uint8_t GAME_PALETTE = 1;
+static const uint8_t TEXT_PALETTE = 2;
 
 bool is_game_mode = true;
 bool is_fullscreen = false;
@@ -47,11 +45,11 @@ bool init_surface(VideoSurface *surface, int width, int height)
     surface->w = width;
     surface->h = height;
     surface->pitch = width * sizeof(uint8_t);
-    
+
     surface->format = (SDL_PixelFormat *)malloc(sizeof(SDL_PixelFormat));
-    surface->format->palette = (SDL_Palette  *)malloc(sizeof(SDL_Palette));
+    surface->format->palette = (SDL_Palette *)malloc(sizeof(SDL_Palette));
     surface->format->BytesPerPixel = 1;
-    
+
     return true;
 }
 
@@ -61,13 +59,10 @@ bool video_init()
     dfs_init(DFS_DEFAULT_LOCATION);
     init_interrupts();
     display_init(RESOLUTION_320x240, DEPTH_16_BPP, 2, GAMMA_NONE, ANTIALIAS_RESAMPLE);
-    rdp_init();
-    for (int i = 0; i < NUM_DISPLAY_LISTS; i++)
-    {
-        dls[i] = rdl_heap_alloc(2048);
-        rdl_reset(dls[i]);
-    }
-    dl = dls[0];
+    ugfx_init(UGFX_DEFAULT_RDP_BUFFER_SIZE);
+
+    display_width = display_get_width();
+    display_height = display_get_height();
 
     _palette1 = (uint16_t *)memalign(64, sizeof(uint16_t) * 16);
     _palette2 = (uint16_t *)memalign(64, sizeof(uint16_t) * 16);
@@ -79,37 +74,45 @@ bool video_init()
     set_palette_on_surface(&game_surface);
     memcpy(_palette1, game_surface.format->palette->colors, sizeof(uint16_t) * 16);
     data_cache_hit_writeback_invalidate(_palette1, sizeof(uint16_t) * 16);
-    rdl_push(dl,
-        RdpSyncTile(),
-        MRdpLoadPalette16(2, (uint32_t)_palette1, RDP_AUTO_TMEM_SLOT(GAME_PALETTE)),
-        RdpSyncTile()
-    );
 
-    //Create the text surface and load/apply palette.
     init_surface(&text_surface, SCREEN_WIDTH * 2, SCREEN_HEIGHT * 2);
     set_palette_on_surface(&text_surface);
     video_fill_surface_with_black(&text_surface);
     memcpy(_palette2, text_surface.format->palette->colors, sizeof(uint16_t) * 16);
     data_cache_hit_writeback_invalidate(_palette2, sizeof(uint16_t) * 16);
-    rdl_push(dl,
-        RdpSyncTile(),
-        MRdpLoadPalette16(2, (uint32_t)_palette2, RDP_AUTO_TMEM_SLOT(TEXT_PALETTE)),
-        RdpSyncTile()
-    );
 
+    //Load the Game and Text palette into TMEM into Tile 2 and 3
+    ugfx_command_t commands[] = {
+        //Load the Game palette
+        ugfx_set_tile(UGFX_FORMAT_INDEX, UGFX_PIXEL_SIZE_4B, 16, 0x800 + (GAME_PALETTE * 0x100), 2, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+        ugfx_set_texture_image((uint32_t)_palette1, UGFX_FORMAT_INDEX, UGFX_PIXEL_SIZE_16B, 16 - 1),
+        ugfx_load_tlut(0 << 2, 0, 15 << 2, 0, 2),
+        ugfx_sync_tile(),
+
+        //Load the 'DOS' text screen palette
+        ugfx_set_tile(UGFX_FORMAT_INDEX, UGFX_PIXEL_SIZE_4B, 16, 0x800 + (TEXT_PALETTE * 0x100), 3, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+        ugfx_set_texture_image((uint32_t)_palette2, UGFX_FORMAT_INDEX, UGFX_PIXEL_SIZE_16B, 16 - 1),
+        ugfx_load_tlut(0 << 2, 0, 15 << 2, 0, 3),
+        ugfx_sync_tile(),
+
+        ugfx_sync_full(),
+        ugfx_finalize(),
+    };
+    data_cache_hit_writeback(commands, sizeof(commands));
+    ugfx_load(commands, sizeof(commands) / sizeof(*commands));
+    rsp_run();
     set_game_mode();
+
+    render_commands = ugfx_buffer_new(2048);
+
     video_has_initialised = true;
-    return true;
+
+    return video_has_initialised;
 }
 
 void video_shutdown()
 {
-    rdp_detach_display();
-    for (int i = 0; i < NUM_DISPLAY_LISTS; i++)
-    {
-        rdl_free(dls[i]);
-    }
-    rdp_close();
+    ugfx_buffer_free(render_commands);
     free(_palette1);
     free(_palette2);
     free(game_surface.format->palette);
@@ -139,58 +142,66 @@ void video_update()
 {
     VideoSurface *src = is_game_mode ? &game_surface : &text_surface;
     uint8_t pal_slot = is_game_mode ? GAME_PALETTE : TEXT_PALETTE;
-    data_cache_hit_writeback_invalidate(src->pixels,  src->w * src->h);
- 
+    data_cache_hit_writeback_invalidate(src->pixels, src->w * src->h);
+
     //We draw the screen from top to bottom.
     //We can only draw 2048bytes per loop and for simplicity we want it to be a multiple
     //of the width.
     int x_per_loop = src->w;
     int y_per_loop = 5;
-    int current_y = 0; //The texture is offset on the Yaxis by this many pixels
+    int current_y = 0;
     int chunk_size = x_per_loop * y_per_loop;
+    if (chunk_size > 2048)
+    {
+        y_per_loop = 1;
+        chunk_size = x_per_loop * y_per_loop;
+    }
     assert(chunk_size <= 2048);
     assert(y_per_loop > 0);
 
-    while (!(disp = display_lock())) {}
-    rdp_attach_display(disp);
-    rdp_set_clipping(0, 0, N64_MIN(SCREEN_WIDTH, src->w), 240);
+    rsp_wait();
+    while (!(disp = display_lock()));
 
-    rdl_push(dl,
-        RdpSyncPipe(),
-        RdpSetOtherModes(SOM_CYCLE_COPY | SOM_ENABLE_TLUT_RGB16)
-    );
+    ugfx_buffer_clear(render_commands);
+    ugfx_buffer_push(render_commands, ugfx_set_display(disp));
+    ugfx_buffer_push(render_commands, ugfx_set_scissor(0, 0, display_width << 2, display_height << 2, UGFX_SCISSOR_DEFAULT));
+    ugfx_buffer_push(render_commands, ugfx_set_other_modes(UGFX_CYCLE_COPY | UGFX_TLUT_RGBA16));
+    ugfx_buffer_push(render_commands, ugfx_sync_pipe());
 
     uint8_t *ptr = src->pixels;
-    while(current_y < 240)
+    while (current_y < 240)
     {
-        //Load y_per_loop * x_per_loop pixels into TMEM, and apply palette from pal_slot
-        //Then draw to framebuffer
-        rdl_push(dl,
-            MRdpLoadTex8bpp(0, (uint32_t)ptr, x_per_loop, y_per_loop, x_per_loop, RDP_AUTO_TMEM_SLOT(0), RDP_AUTO_PITCH),
-            MRdpSetTile8bpp(1, RDP_AUTO_TMEM_SLOT(0), RDP_AUTO_PITCH, RDP_AUTO_TMEM_SLOT(pal_slot), x_per_loop, y_per_loop),
-            //Draw the first line. (1/5 lines is drawn twice, so that over 200 lines, this will scale to 240 on screen)
-            RdpTextureRectangle1I(1, 0, current_y + 0, 0 + x_per_loop, current_y + 1),
-            RdpTextureRectangle2I(0, 0, 4, 1),
-            //Draw the rest of the lines (including the above line)
-            RdpTextureRectangle1I(1, 0, current_y + 1, 0 + x_per_loop, current_y + y_per_loop),
-            RdpTextureRectangle2I(0, 0, 4, 1)
-        );
-        current_y += y_per_loop + 1;
+        //Load the 8bit texture into tile 0:
+        ugfx_buffer_push(render_commands, ugfx_set_tile(UGFX_FORMAT_INDEX, UGFX_PIXEL_SIZE_8B, x_per_loop / 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+        ugfx_buffer_push(render_commands, ugfx_set_texture_image((uint32_t)ptr, UGFX_FORMAT_INDEX, UGFX_PIXEL_SIZE_8B, x_per_loop - 1));
+        ugfx_buffer_push(render_commands, ugfx_load_tile(0 << 2, 0 << 2, (x_per_loop - 1) << 2, (y_per_loop - 1) << 2, 0));
+
+        //Apply the palette onto the loaded tile, then set it to tile 1:
+        ugfx_buffer_push(render_commands, ugfx_set_tile(UGFX_FORMAT_INDEX, UGFX_PIXEL_SIZE_8B, x_per_loop / 8, 0, 1, pal_slot, 0, 0, 0, 0, 0, 0, 0, 0));
+        ugfx_buffer_push(render_commands, ugfx_set_tile_size(0, 0, (x_per_loop - 1) << 2, (y_per_loop - 1) << 2, 1));
+
+        //Draw a line from tile 1
+        ugfx_buffer_push(render_commands, ugfx_texture_rectangle(1, 0, current_y << 2, x_per_loop << 2, (current_y + 1) << 2));
+        ugfx_buffer_push(render_commands, ugfx_texture_rectangle_tcoords(0 << 5, 0 << 5, 4 << 10, 1 << 10));
+        if (y_per_loop == 5)
+        {
+            //Can draw 5 line at once at this games standard surface width, note the 1st line is drawn twice so that over 200 lines it is scaled to 240)
+            ugfx_buffer_push(render_commands, ugfx_texture_rectangle(1, 0, (current_y + 1) << 2, x_per_loop << 2, (current_y + y_per_loop) << 2));
+            ugfx_buffer_push(render_commands, ugfx_texture_rectangle_tcoords(0 << 5, 0 << 5, 4 << 10, 1 << 10));
+            current_y++;
+        }
+        current_y += y_per_loop;
         ptr += chunk_size;
     }
 
-    rdl_flush(dl);
-    rdl_exec(dl);
-    for (int i = 0; i < NUM_DISPLAY_LISTS; i++)
-    {
-        if (dl == dls[i])
-        {
-            dl = dls[(i + 1) % NUM_DISPLAY_LISTS];
-            break;
-        }
-    }
-    rdl_reset(dl);
-    rdp_detach_display();
+    ugfx_buffer_push(render_commands, ugfx_sync_pipe());
+    ugfx_buffer_push(render_commands, ugfx_sync_full());
+    ugfx_buffer_push(render_commands, ugfx_finalize());
+
+    data_cache_hit_writeback(render_commands->data, render_commands->length * sizeof(ugfx_command_t));
+    ugfx_load(render_commands->data, render_commands->length);
+
+    rsp_run();
     display_show(disp);
 }
 
@@ -395,12 +406,19 @@ void video_update_palette(int palette_index, SDL_Color new_color)
 {
     SDL_SetPaletteColors(game_surface.format->palette, &new_color, palette_index, 1);
     memcpy(_palette1, game_surface.format->palette->colors, sizeof(uint16_t) * 16);
-    //Update the palette in TMEM
-    rdl_push(dl,
-        RdpSyncTile(),
-        MRdpLoadPalette16(2, (uint32_t)_palette1, RDP_AUTO_TMEM_SLOT(GAME_PALETTE)),
-        RdpSyncTile()
-    );
+    data_cache_hit_writeback_invalidate(_palette1, sizeof(uint16_t) * 16);
+    ugfx_command_t commands[] = {
+        ugfx_set_tile(UGFX_FORMAT_INDEX, UGFX_PIXEL_SIZE_4B, 16, 0x800 + (GAME_PALETTE * 0x100), 2, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+        ugfx_set_texture_image((uint32_t)_palette1, UGFX_FORMAT_INDEX, UGFX_PIXEL_SIZE_16B, 16 - 1),
+        ugfx_load_tlut(0 << 2, 0, 15 << 2, 0, 2),
+        ugfx_sync_tile(),
+        ugfx_sync_full(),
+        ugfx_finalize(),
+    };
+    data_cache_hit_writeback(commands, sizeof(commands));
+    rsp_wait();
+    ugfx_load(commands, sizeof(commands) / sizeof(*commands));
+    rsp_run();
 }
 
 void fade_to_black(uint16 wait_time)

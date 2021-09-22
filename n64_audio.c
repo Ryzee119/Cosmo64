@@ -41,7 +41,7 @@ void cosmo_audio_init()
     MikMod_RegisterAllDrivers();
     MikMod_RegisterAllLoaders();
     md_mode &= ~DMODE_SURROUND;
-    md_mode |= DMODE_STEREO | DMODE_16BITS | DMODE_SOFT_MUSIC | DMODE_SOFT_SNDF;
+    md_mode |= DMODE_STEREO | DMODE_16BITS | DMODE_SOFT_MUSIC | DMODE_SOFT_SNDFX;
     md_mixfreq = AUDIO_DESIRED_SAMPLE_RATE;
     MikMod_Init("");
     MikMod_SetNumVoices(-1, 5);
