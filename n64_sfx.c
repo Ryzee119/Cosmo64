@@ -327,3 +327,8 @@ void play_sfx(int sfx_number)
     if (sfxs[sfx_number].sample)
         Sample_Play(sfxs[sfx_number].sample, 0, 0);
 }
+
+void sfx_close()
+{
+
+}

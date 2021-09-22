@@ -60,3 +60,8 @@ void play_music()
     Player_Start(bgm);
     Player_SetVolume(128);
 }
+
+void music_close()
+{
+    
+}
