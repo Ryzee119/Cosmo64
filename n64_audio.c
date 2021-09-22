@@ -11,6 +11,8 @@
 MIKMODAPI extern UWORD md_mode __attribute__((section (".data")));
 MIKMODAPI extern UWORD md_mixfreq __attribute__((section (".data")));
 static timer_link_t *audio_timer;
+void sfx_close(void);
+void music_close(void);
 
 AudioConfig audioConfig;
 
@@ -38,7 +40,7 @@ void cosmo_audio_init()
     audioConfig.enabled = true;
     MikMod_RegisterAllDrivers();
     MikMod_RegisterAllLoaders();
-    md_mode &= ~DMODE_SURROUND
+    md_mode &= ~DMODE_SURROUND;
     md_mode |= DMODE_STEREO | DMODE_16BITS | DMODE_SOFT_MUSIC | DMODE_SOFT_SNDF;
     md_mixfreq = AUDIO_DESIRED_SAMPLE_RATE;
     MikMod_Init("");
