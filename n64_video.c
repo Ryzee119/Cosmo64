@@ -8,9 +8,6 @@
 #include "input.h"
 #include "b800_font.h"
 
-#define N64_MIN(a, b) (((a) < (b)) ? (a) : (b))
-#define N64_MAX(a, b) (((a) > (b)) ? (a) : (b))
-
 #define VideoSurface SDL_Surface
 
 VideoSurface game_surface;
@@ -30,8 +27,6 @@ bool is_game_mode = true;
 bool is_fullscreen = false;
 bool video_has_initialised = false;
 int video_scale_factor = DEFAULT_SCALE_FACTOR;
-
-void video_fill_surface_with_black(VideoSurface *surface);
 
 void fade_to_black_speed_3()
 {
@@ -55,7 +50,7 @@ bool init_surface(VideoSurface *surface, int width, int height)
 
 bool video_init()
 {
-    debug_init(DEBUG_FEATURE_LOG_ISVIEWER);
+    debug_init(DEBUG_FEATURE   _LOG_ISVIEWER);
     dfs_init(DFS_DEFAULT_LOCATION);
     init_interrupts();
     display_init(RESOLUTION_320x240, DEPTH_16_BPP, 2, GAMMA_NONE, ANTIALIAS_RESAMPLE);
@@ -69,15 +64,15 @@ bool video_init()
     assert(_palette1 != NULL);
     assert(_palette2 != NULL);
 
-    //Create the game surface and load/apply palette.
+    //Create the game surface and load/apply palette. This is the main 320x200 game screen.
     init_surface(&game_surface, SCREEN_WIDTH, SCREEN_HEIGHT);
     set_palette_on_surface(&game_surface);
     memcpy(_palette1, game_surface.format->palette->colors, sizeof(uint16_t) * 16);
     data_cache_hit_writeback_invalidate(_palette1, sizeof(uint16_t) * 16);
 
+    //Create the text surface and load/apply palette. This is the 640x400 DOS screen that shows up on exit.
     init_surface(&text_surface, SCREEN_WIDTH * 2, SCREEN_HEIGHT * 2);
     set_palette_on_surface(&text_surface);
-    video_fill_surface_with_black(&text_surface);
     memcpy(_palette2, text_surface.format->palette->colors, sizeof(uint16_t) * 16);
     data_cache_hit_writeback_invalidate(_palette2, sizeof(uint16_t) * 16);
 
@@ -101,10 +96,10 @@ bool video_init()
     data_cache_hit_writeback(commands, sizeof(commands));
     ugfx_load(commands, sizeof(commands) / sizeof(*commands));
     rsp_run();
-    set_game_mode();
 
     render_commands = ugfx_buffer_new(2048);
 
+    set_game_mode();
     video_has_initialised = true;
 
     return video_has_initialised;
@@ -112,6 +107,7 @@ bool video_init()
 
 void video_shutdown()
 {
+    ugfx_close();
     ugfx_buffer_free(render_commands);
     free(_palette1);
     free(_palette2);
@@ -125,16 +121,20 @@ void video_shutdown()
 void set_text_mode()
 {
     if (!is_game_mode)
+    {
         return;
-    //SDL_RenderSetLogicalSize(renderer, text_surface.w, text_surface.h);
+    }
+    //SDL_RenderSetLogicalSize(renderer, text_surface.w, text_surface.h); FIXME
     is_game_mode = false;
 }
 
 void set_game_mode()
 {
     if (is_game_mode)
+    {
         return;
-    //SDL_RenderSetLogicalSize(renderer, game_surface.w, game_surface.h);
+    }
+    //SDL_RenderSetLogicalSize(renderer, game_surface.w, game_surface.h); FIXME
     is_game_mode = true;
 }
 
@@ -153,6 +153,7 @@ void video_update()
     int chunk_size = x_per_loop * y_per_loop;
     if (chunk_size > 2048)
     {
+        //Fall back to single lines.
         y_per_loop = 1;
         chunk_size = x_per_loop * y_per_loop;
     }
@@ -495,9 +496,10 @@ void video_draw_text(uint8 character, int fg, int bg, int x, int y)
 
 void video_set_fullscreen(bool new_state)
 {
+    return;
 }
 
 void video_set_scale_factor(int scale_factor)
 {
-    video_scale_factor = scale_factor;
+    return;
 }
