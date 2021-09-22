@@ -186,7 +186,7 @@ void video_update()
         ugfx_buffer_push(render_commands, ugfx_texture_rectangle_tcoords(0 << 5, 0 << 5, 4 << 10, 1 << 10));
         if (y_per_loop == 5)
         {
-            //Can draw 5 line at once at this games standard surface width, note the 1st line is drawn twice so that over 200 lines it is scaled to 240)
+            //Can draw 5 lines at once at this games standard surface width, note the 1st line is drawn twice so that over 200 lines it is scaled to 240)
             ugfx_buffer_push(render_commands, ugfx_texture_rectangle(1, 0, (current_y + 1) << 2, x_per_loop << 2, (current_y + y_per_loop) << 2));
             ugfx_buffer_push(render_commands, ugfx_texture_rectangle_tcoords(0 << 5, 0 << 5, 4 << 10, 1 << 10));
             current_y++;
@@ -199,8 +199,8 @@ void video_update()
     ugfx_buffer_push(render_commands, ugfx_sync_full());
     ugfx_buffer_push(render_commands, ugfx_finalize());
 
-    data_cache_hit_writeback(render_commands->data, render_commands->length * sizeof(ugfx_command_t));
-    ugfx_load(render_commands->data, render_commands->length);
+    data_cache_hit_writeback(ugfx_buffer_data(render_commands), ugfx_buffer_length(render_commands) * sizeof(ugfx_command_t));
+    ugfx_load(ugfx_buffer_data(render_commands), ugfx_buffer_length(render_commands));
 
     rsp_run();
     display_show(disp);
