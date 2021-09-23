@@ -124,7 +124,6 @@ void set_text_mode()
     {
         return;
     }
-    //SDL_RenderSetLogicalSize(renderer, text_surface.w, text_surface.h); FIXME
     is_game_mode = false;
 }
 
@@ -134,7 +133,6 @@ void set_game_mode()
     {
         return;
     }
-    //SDL_RenderSetLogicalSize(renderer, game_surface.w, game_surface.h); FIXME
     is_game_mode = true;
 }
 
@@ -148,17 +146,10 @@ void video_update()
     //We can only draw 2048bytes per loop and for simplicity we want it to be a multiple
     //of the width.
     int x_per_loop = src->w;
-    int y_per_loop = 5;
+    int y_per_loop = (is_game_mode) ? 5 : 1;
     int current_y = 0;
     int chunk_size = x_per_loop * y_per_loop;
-    if (chunk_size > 2048)
-    {
-        //Fall back to single lines.
-        y_per_loop = 1;
-        chunk_size = x_per_loop * y_per_loop;
-    }
     assert(chunk_size <= 2048);
-    assert(y_per_loop > 0);
 
     rsp_wait();
     while (!(disp = display_lock()));
@@ -185,14 +176,15 @@ void video_update()
         //Draw a line from tile 1
         ugfx_buffer_push(render_commands, ugfx_texture_rectangle(1, 0, current_y << 2, x_per_loop << 2, (current_y + 1) << 2));
         ugfx_buffer_push(render_commands, ugfx_texture_rectangle_tcoords(0 << 5, 0 << 5, 4 << 10, 1 << 10));
-        if (y_per_loop == 5)
+        current_y++;
+
+        if (is_game_mode)
         {
             //Can draw 5 lines at once at this games standard surface width, note the 1st line is drawn twice so that over 200 lines it is scaled to 240)
-            ugfx_buffer_push(render_commands, ugfx_texture_rectangle(1, 0, (current_y + 1) << 2, x_per_loop << 2, (current_y + y_per_loop) << 2));
+            ugfx_buffer_push(render_commands, ugfx_texture_rectangle(1, 0, (current_y) << 2, x_per_loop << 2, (current_y + y_per_loop - 1) << 2));
             ugfx_buffer_push(render_commands, ugfx_texture_rectangle_tcoords(0 << 5, 0 << 5, 4 << 10, 1 << 10));
-            current_y++;
+            current_y += y_per_loop;
         }
-        current_y += y_per_loop;
         ptr += chunk_size;
     }
 
