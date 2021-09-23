@@ -50,7 +50,7 @@ bool init_surface(VideoSurface *surface, int width, int height)
 
 bool video_init()
 {
-    debug_init(DEBUG_FEATURE   _LOG_ISVIEWER);
+    debug_init(DEBUG_FEATURE_LOG_ISVIEWER);
     dfs_init(DFS_DEFAULT_LOCATION);
     init_interrupts();
     display_init(RESOLUTION_320x240, DEPTH_16_BPP, 2, GAMMA_NONE, ANTIALIAS_RESAMPLE_FETCH_ALWAYS);
@@ -176,6 +176,7 @@ void video_update()
         ugfx_buffer_push(render_commands, ugfx_set_tile(UGFX_FORMAT_INDEX, UGFX_PIXEL_SIZE_8B, x_per_loop / 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
         ugfx_buffer_push(render_commands, ugfx_set_texture_image((uint32_t)ptr, UGFX_FORMAT_INDEX, UGFX_PIXEL_SIZE_8B, x_per_loop - 1));
         ugfx_buffer_push(render_commands, ugfx_load_tile(0 << 2, 0 << 2, (x_per_loop - 1) << 2, (y_per_loop - 1) << 2, 0));
+        ugfx_buffer_push(render_commands, ugfx_sync_tile());
 
         //Apply the palette onto the loaded tile, then set it to tile 1:
         ugfx_buffer_push(render_commands, ugfx_set_tile(UGFX_FORMAT_INDEX, UGFX_PIXEL_SIZE_8B, x_per_loop / 8, 0, 1, pal_slot, 0, 0, 0, 0, 0, 0, 0, 0));
