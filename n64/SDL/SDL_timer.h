@@ -6,7 +6,7 @@
 
 static inline Uint32 SDL_GetTicks()
 {
-    return get_ticks_ms();
+    return timer_ticks() / (TICKS_PER_SECOND / 1000);
 }
 
 static inline void SDL_Delay(Uint32 ms)
