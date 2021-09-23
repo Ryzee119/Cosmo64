@@ -40,8 +40,10 @@ void load_music(uint16 new_music_index)
         Player_Stop();
         Player_Free(bgm);
     }
-    bgm = Player_Load(get_game_dir_full_path(music_filename_tbl[new_music_index]), 127, 0);
+    char *path = get_game_dir_full_path(music_filename_tbl[new_music_index]);
+    bgm = Player_Load(path, 127, 0);
     play_music();
+    free(path);
 }
 
 void music_init()
