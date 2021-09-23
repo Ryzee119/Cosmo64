@@ -53,7 +53,7 @@ bool video_init()
     debug_init(DEBUG_FEATURE   _LOG_ISVIEWER);
     dfs_init(DFS_DEFAULT_LOCATION);
     init_interrupts();
-    display_init(RESOLUTION_320x240, DEPTH_16_BPP, 2, GAMMA_NONE, ANTIALIAS_RESAMPLE);
+    display_init(RESOLUTION_320x240, DEPTH_16_BPP, 2, GAMMA_NONE, ANTIALIAS_RESAMPLE_FETCH_ALWAYS);
     ugfx_init(UGFX_DEFAULT_RDP_BUFFER_SIZE);
 
     display_width = display_get_width();
