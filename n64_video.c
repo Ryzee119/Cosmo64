@@ -10,8 +10,8 @@
 
 #define VideoSurface SDL_Surface
 
-VideoSurface game_surface;
-VideoSurface text_surface;
+static VideoSurface game_surface;
+static VideoSurface text_surface;
 
 static display_context_t disp = 0;
 static ugfx_buffer_t *render_commands;
@@ -23,10 +23,8 @@ static uint16_t *_palette2;
 static const uint8_t GAME_PALETTE = 1;
 static const uint8_t TEXT_PALETTE = 2;
 
-bool is_game_mode = true;
-bool is_fullscreen = false;
-bool video_has_initialised = false;
-int video_scale_factor = DEFAULT_SCALE_FACTOR;
+static bool is_game_mode = true;
+static bool video_has_initialised = false;
 
 void fade_to_black_speed_3()
 {
