@@ -325,7 +325,10 @@ void load_sfx()
 
 void play_sfx(int sfx_number)
 {
-    if (sfxs[sfx_number].sample && Voice_Stopped(sfxs[sfx_number].voice))
+    if (!sfx_number) return;
+
+    sfx_number--;
+    if (sfxs[sfx_number].sample)
     {
         sfxs[sfx_number].voice = Sample_Play(sfxs[sfx_number].sample, 0, 0);
     }
