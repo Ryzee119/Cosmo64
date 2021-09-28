@@ -36,6 +36,7 @@ SRCS = \
 	$(COSMO_DIR)/status.c \
 	$(COSMO_DIR)/tile.c \
 	$(COSMO_DIR)/util.c \
+	$(COSMO_DIR)/sound/opl.c \
 	$(COSMO_DIR)/files/file.c \
 	$(COSMO_DIR)/files/vol.c
 
