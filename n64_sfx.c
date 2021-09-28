@@ -3,6 +3,7 @@
 #include <libdragon.h>
 #include <string.h>
 #include <stdlib.h>
+#include <SDL_timer.h>
 #include "sound/sfx.h"
 #include "sound/audio.h"
 #include "files/file.h"
@@ -143,6 +144,7 @@ void play_sfx(int sfx_number)
         if (!mixer_ch_playing(channel))
         {
             mixer_ch_play(channel, &sfxs[sfx_number].wave);
+            SDL_Delay(0); //Pump an audio backend update
             return;
         }
     }
