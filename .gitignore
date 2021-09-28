@@ -1,5 +1,4 @@
 .vscode
 build
-filesystem
 libdragon
 *.z64
