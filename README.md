@@ -11,8 +11,8 @@ A port of Cosmo's Cosmic Adventure to the Nintendo 64.
 ## Download
 You can download a precompiled binary from the [Release section](https://github.com/Ryzee119/Cosmo64/releases). This include the shareware version of the first episode ready to play.
 The other 2 episodes are supported, however need files from the original game:
-* To play episode two, copy `COSMO2.VOL` into `filesystem` and recompile with '-DEP2' flag.
-* To play episode three, copy `COSMO3.VOL` into `filesystem` and recompile with '-DEP3' flag.
+* To play episode two, copy `COSMO2.VOL` into `filesystem` and recompile with 'EP=2' flag.
+* To play episode three, copy `COSMO3.VOL` into `filesystem` and recompile with 'EP=3' flag.
 
 ## Build
 This was developed using the opensource N64 toolchain [libdragon](https://github.com/DragonMinded/libdragon). I developed it using the official docker container. The build process is something like this:
