@@ -1,9 +1,13 @@
+ifndef EP
+$(error Cosmo Episode not specified: use make EP=1, 2 or 3)
+endif
+
 BUILD_DIR = build
 COSMO_DIR = cosmo-engine/src
 
 include n64.mk
 
-CFLAGS += -I$(COSMO_DIR) -In64/SDL -I$(N64_ROOTDIR)/include
+CFLAGS += -I$(COSMO_DIR) -In64/SDL -I$(N64_ROOTDIR)/include -DEP$(EP)
 LDFLAGS += -L$(N64_ROOTDIR)/lib -lmikmod
 
 SRCS = \
@@ -40,16 +44,17 @@ SRCS = \
 	$(COSMO_DIR)/files/file.c \
 	$(COSMO_DIR)/files/vol.c
 
-all: cosmo64.z64
+PROG_NAME = cosmo64_ep$(EP)
+all: $(PROG_NAME).z64
 
-$(BUILD_DIR)/cosmo64.dfs: $(wildcard filesystem/*)
-$(BUILD_DIR)/cosmo64.elf: $(SRCS:%.c=$(BUILD_DIR)/%.o)
+$(BUILD_DIR)/$(PROG_NAME).dfs: $(wildcard filesystem/*)
+$(BUILD_DIR)/$(PROG_NAME).elf: $(SRCS:%.c=$(BUILD_DIR)/%.o)
 
-cosmo64.z64: N64_ROM_TITLE="cosmo64"
-cosmo64.z64: $(BUILD_DIR)/cosmo64.dfs
+$(PROG_NAME).z64: N64_ROM_TITLE="$(PROG_NAME)"
+$(PROG_NAME).z64: $(BUILD_DIR)/$(PROG_NAME).dfs
 
 clean:
-	rm -rf $(BUILD_DIR) cosmo64.z64
+	rm -rf $(BUILD_DIR) $(PROG_NAME).z64
 
 -include $(wildcard $(BUILD_DIR)/*.d)
 

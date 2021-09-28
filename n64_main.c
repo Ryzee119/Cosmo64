@@ -21,7 +21,13 @@ int main(void)
 {
     load_config_from_command_line(0, NULL);
 
-    set_episode_number(1);
+    #ifdef EP3
+	set_episode_number(3);
+	#elif EP2
+	set_episode_number(2);
+	#else
+	set_episode_number(1);
+	#endif
 
     video_init();
     cosmo_audio_init();
