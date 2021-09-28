@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0
 
 #include <libdragon.h>
+#include <SDL_timer.h>
 #include "input.h"
 #include "dialog.h"
 #include "demo.h"
@@ -139,7 +140,7 @@ SDL_Keycode poll_for_key_press(bool allow_key_repeat)
 
 void cosmo_wait(int delay)
 {
-    wait_ms(8 * delay);
+    SDL_Delay(8 * delay);
 }
 
 void set_input_command_key(InputCommand command, SDL_Keycode keycode)
