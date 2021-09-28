@@ -2,6 +2,7 @@
 
 #include <libdragon.h>
 #include <malloc.h>
+#include <SDL_timer.h>
 #include "video.h"
 #include "palette.h"
 #include "tile.h"
@@ -194,6 +195,7 @@ void video_update()
     ugfx_load(ugfx_buffer_data(render_commands), ugfx_buffer_length(render_commands));
 
     rsp_run();
+    SDL_Delay(0); //Pump audio backend update
     display_show(disp);
 }
 
