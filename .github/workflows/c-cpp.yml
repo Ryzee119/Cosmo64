@@ -1,0 +1,59 @@
+name: Build
+
+on:
+  push:
+    paths-ignore:
+      - '.github/*'
+      - '.github/*_TEMPLATE/**'
+      - '*.md'
+  pull_request:
+    paths-ignore:
+      - '.github/*'
+      - '.github/*_TEMPLATE/**'
+      - '*.md'
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: Setup Libdragon
+      run: |
+           export BUILD_TAG=build-$(date -u +'%Y%m%d%H%M')
+           echo "BUILD_TAG=$BUILD_TAG" >> $GITHUB_ENV
+           sudo npm install -g libdragon
+           sudo libdragon download
+           sudo libdragon start
+           git clone https://github.com/rasky/libdragon.git
+           cd libdragon
+           git checkout mixer
+           docker exec libdragon cp libdragon/include/rsp.inc /usr/local/mips64-elf/include
+           docker exec libdragon cp libdragon/include/rsp_dma.inc /usr/local/mips64-elf/include
+           docker exec -w /libdragon/libdragon libdragon make
+           git remote add ryzee https://github.com/Ryzee119/libdragon.git
+           git fetch ryzee
+           git checkout ugfx_mixer
+           docker exec -w /libdragon/libdragon libdragon make
+           docker exec -w /libdragon/libdragon libdragon make install
+ 
+    - name: Compile
+      run: |
+           libdragon make EP=1
+           cp cosmo-engine/LICENSE LICENSE
+
+    - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+      name: Create Release
+      uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: ${{ env.BUILD_TAG }}
+        prerelease: true
+        files: |
+               LICENSE
+               *.z64
