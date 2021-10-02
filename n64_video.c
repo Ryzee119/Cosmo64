@@ -195,8 +195,9 @@ void video_update()
     data_cache_hit_writeback(ugfx_buffer_data(render_commands), ugfx_buffer_length(render_commands) * sizeof(ugfx_command_t));
     ugfx_load(ugfx_buffer_data(render_commands), ugfx_buffer_length(render_commands));
 
-    rsp_run();
+    rsp_run_async();
     SDL_Delay(0); //Pump audio backend update
+    rsp_wait();
     display_show(disp);
 }
 
