@@ -115,6 +115,7 @@ void video_shutdown()
     free(game_surface.format);
     free(game_surface.pixels);
     free(text_surface.format->palette);
+    free(text_surface.format);
     free(text_surface.pixels);
 }
 
