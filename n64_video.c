@@ -151,9 +151,7 @@ void video_update()
     int chunk_size = x_per_loop * y_per_loop;
     assert(chunk_size <= 2048);
 
-    rsp_wait();
     while (!(disp = display_lock()));
-
     ugfx_buffer_clear(render_commands);
     ugfx_buffer_push(render_commands, ugfx_set_display(disp));
     ugfx_buffer_push(render_commands, ugfx_set_scissor(0, 0, display_width << 2, display_height << 2, UGFX_SCISSOR_DEFAULT));
@@ -195,6 +193,7 @@ void video_update()
     data_cache_hit_writeback(ugfx_buffer_data(render_commands), ugfx_buffer_length(render_commands) * sizeof(ugfx_command_t));
     ugfx_load(ugfx_buffer_data(render_commands), ugfx_buffer_length(render_commands));
 
+    rsp_wait();
     rsp_run_async();
     SDL_Delay(0); //Pump audio backend update
     rsp_wait();
