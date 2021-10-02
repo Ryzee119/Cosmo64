@@ -107,8 +107,8 @@ static void read_sram(uint8_t *dst, uint32_t offset, int len)
         }
 
         //Read a sector of data from SRAM
-        data_cache_hit_writeback_invalidate(sector_cache, 16);
         _dma_read(sector_cache, 0x08000000 + (banked_offset & 0x07FFFFFF), 16);
+        data_cache_hit_writeback_invalidate(sector_cache, 16);
 
         //Copy only the required bytes into the dst buffer
         int br = SRAMFS_MIN(len, 16 - (offset - aligned_offset));
@@ -152,8 +152,8 @@ static void write_sram(uint8_t *src, uint32_t offset, int len)
         //Can skip this read/modify/write if we're aligned and atleast 16 byte.
         if (len < 16 || (offset - aligned_offset) != 0)
         {
-            data_cache_hit_writeback_invalidate(sector_cache, 16);
             _dma_read(sector_cache, 0x08000000 + (banked_offset & 0x07FFFFFF), 16);
+            data_cache_hit_writeback_invalidate(sector_cache, 16);
         }
 
         int bw = SRAMFS_MIN(len, 16 - (offset - aligned_offset));
@@ -178,21 +178,33 @@ static void *__open(char *name, int flags)
 
     int offset = sram_get_file_start_by_handle(handle);
     int magic;
+    read_sram((uint8_t *)&magic, offset, 4);
 
     //File is meant to be ready only, see if it exists by reading the first few bytes
     //to see if the magic number is present.
-    if (flags == O_RDONLY)
+    if (flags == O_RDONLY && magic != SRAM_MAGIC)
     {
-        read_sram((uint8_t *)&magic, offset, 4);
-        if (magic != SRAM_MAGIC)
-        {
-            return NULL;
-        }
+        return NULL;
     }
 
-    //Write the magic number then return handle to the file.
-    magic = SRAM_MAGIC;
-    write_sram((uint8_t *)&magic, offset, 4);
+    //We should 'create' the file
+    if (magic != SRAM_MAGIC)
+    {
+        //Write the magic number then return handle to the file, then zero the remainder
+        magic = SRAM_MAGIC;
+        write_sram((uint8_t *)&magic, offset, sizeof(SRAM_MAGIC));
+        uint8_t zero[16] = {0};
+        data_cache_hit_writeback_invalidate(zero, 16);
+        int remaining = sram_files[handle].size - sizeof(SRAM_MAGIC);
+        int pos = 0;
+        while(remaining)
+        {
+            int chunk = SRAMFS_MIN(sizeof(zero), remaining);
+            write_sram(zero, sizeof(SRAM_MAGIC) + offset + pos, chunk);
+            remaining -= chunk;
+            pos += chunk;
+        }
+    }
     sram_files[handle].offset = 0;
     return (void *)handle;
 }
