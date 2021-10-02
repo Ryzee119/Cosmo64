@@ -20,6 +20,7 @@ static ugfx_buffer_t *render_commands;
 static uint32_t display_width;
 static uint32_t display_height;
 
+static bool palette_dirty = false;
 static uint16_t *_palette1;
 static uint16_t *_palette2;
 static const uint8_t GAME_PALETTE = 1;
@@ -156,6 +157,15 @@ void video_update()
     ugfx_buffer_push(render_commands, ugfx_set_other_modes(UGFX_CYCLE_COPY | UGFX_TLUT_RGBA16));
     ugfx_buffer_push(render_commands, ugfx_sync_pipe());
 
+    if (palette_dirty)
+    {
+        ugfx_buffer_push(render_commands, ugfx_set_tile(UGFX_FORMAT_INDEX, UGFX_PIXEL_SIZE_4B, 16, 0x800 + (GAME_PALETTE * 0x100), 2, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+        ugfx_buffer_push(render_commands, ugfx_set_texture_image((uint32_t)_palette1, UGFX_FORMAT_INDEX, UGFX_PIXEL_SIZE_16B, 16 - 1));
+        ugfx_buffer_push(render_commands, ugfx_load_tlut(0 << 2, 0, 15 << 2, 0, 2));
+        ugfx_buffer_push(render_commands, ugfx_sync_tile());
+        palette_dirty = false;
+    }
+
     uint8_t *ptr = src->pixels;
     while (current_y < 240)
     {
@@ -191,7 +201,6 @@ void video_update()
     data_cache_hit_writeback(ugfx_buffer_data(render_commands), ugfx_buffer_length(render_commands) * sizeof(ugfx_command_t));
     ugfx_load(ugfx_buffer_data(render_commands), ugfx_buffer_length(render_commands));
 
-    rsp_wait();
     rsp_run_async();
     SDL_Delay(0); //Pump audio backend update
     rsp_wait();
@@ -400,18 +409,7 @@ void video_update_palette(int palette_index, SDL_Color new_color)
     SDL_SetPaletteColors(game_surface.format->palette, &new_color, palette_index, 1);
     memcpy(_palette1, game_surface.format->palette->colors, sizeof(uint16_t) * 16);
     data_cache_hit_writeback_invalidate(_palette1, sizeof(uint16_t) * 16);
-    ugfx_command_t commands[] = {
-        ugfx_set_tile(UGFX_FORMAT_INDEX, UGFX_PIXEL_SIZE_4B, 16, 0x800 + (GAME_PALETTE * 0x100), 2, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-        ugfx_set_texture_image((uint32_t)_palette1, UGFX_FORMAT_INDEX, UGFX_PIXEL_SIZE_16B, 16 - 1),
-        ugfx_load_tlut(0 << 2, 0, 15 << 2, 0, 2),
-        ugfx_sync_tile(),
-        ugfx_sync_full(),
-        ugfx_finalize(),
-    };
-    data_cache_hit_writeback(commands, sizeof(commands));
-    rsp_wait();
-    ugfx_load(commands, sizeof(commands) / sizeof(*commands));
-    rsp_run();
+    palette_dirty =true;
 }
 
 void fade_to_black(uint16 wait_time)
