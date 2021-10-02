@@ -7,7 +7,7 @@ BUILD_DIR = build
 COSMO_DIR = cosmo-engine/src
 include n64.mk
 
-CFLAGS += -I$(COSMO_DIR) -In64/SDL -I$(N64_ROOTDIR)/include -DEP$(EP) -Iugfx
+CFLAGS += -I$(COSMO_DIR) -In64/SDL -I$(N64_ROOTDIR)/include -DEP$(EP) -In64/ugfx
 LDFLAGS += -L$(N64_ROOTDIR)/lib -L$(CURDIR) 
 
 SRCS = \
@@ -17,7 +17,7 @@ SRCS = \
 	n64_music.c \
 	n64_sfx.c \
 	n64_video.c \
-	ugfx/ugfx.c \
+	n64/ugfx/ugfx.c \
 	$(COSMO_DIR)/actor_collision.c \
 	$(COSMO_DIR)/actor_toss.c \
 	$(COSMO_DIR)/actor_worktype.c \
@@ -49,7 +49,7 @@ PROG_NAME = cosmo64_ep$(EP)
 all: $(PROG_NAME).z64
 
 $(BUILD_DIR)/$(PROG_NAME).dfs: $(wildcard filesystem/*)
-$(BUILD_DIR)/$(PROG_NAME).elf: $(SRCS:%.c=$(BUILD_DIR)/%.o) $(BUILD_DIR)/ugfx/rsp_ugfx.o
+$(BUILD_DIR)/$(PROG_NAME).elf: $(SRCS:%.c=$(BUILD_DIR)/%.o) $(BUILD_DIR)/n64/ugfx/rsp_ugfx.o
 
 $(PROG_NAME).z64: N64_ROM_TITLE="$(PROG_NAME)"
 $(PROG_NAME).z64: $(BUILD_DIR)/$(PROG_NAME).dfs
