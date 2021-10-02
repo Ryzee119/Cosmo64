@@ -11,7 +11,7 @@ static inline Uint32 SDL_GetTicks()
 
 static inline void SDL_Delay(Uint32 ms)
 {
-    unsigned int initial_tick = TICKS_READ();
+    unsigned long long timeout = timer_ticks() + TICKS_FROM_MS(ms);
     do
     {
         if (audio_can_write())
@@ -20,7 +20,7 @@ static inline void SDL_Delay(Uint32 ms)
             mixer_poll(buf, audio_get_buffer_length());
             audio_write_end();
         }
-    } while (TICKS_READ() - initial_tick < TICKS_FROM_MS(ms));
+    } while (timer_ticks() < timeout);
 }
 
 #endif
