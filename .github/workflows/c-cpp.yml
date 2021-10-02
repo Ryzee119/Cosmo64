@@ -36,10 +36,6 @@ jobs:
            docker exec libdragon cp libdragon/include/rsp.inc /usr/local/mips64-elf/include
            docker exec libdragon cp libdragon/include/rsp_dma.inc /usr/local/mips64-elf/include
            docker exec -w /libdragon/libdragon libdragon make
-           git remote add ryzee https://github.com/Ryzee119/libdragon.git
-           git fetch ryzee
-           git checkout ugfx_mixer
-           docker exec -w /libdragon/libdragon libdragon make
            docker exec -w /libdragon/libdragon libdragon make install
  
     - name: Compile

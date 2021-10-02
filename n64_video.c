@@ -8,6 +8,7 @@
 #include "tile.h"
 #include "input.h"
 #include "b800_font.h"
+#include "ugfx.h"
 
 #define VideoSurface SDL_Surface
 
@@ -55,8 +56,8 @@ bool video_init()
     display_init(RESOLUTION_320x240, DEPTH_16_BPP, 2, GAMMA_NONE, ANTIALIAS_RESAMPLE_FETCH_ALWAYS);
     ugfx_init(UGFX_DEFAULT_RDP_BUFFER_SIZE);
 
-    display_width = display_get_width();
-    display_height = display_get_height();
+    display_width = 320;
+    display_height = 240;
 
     _palette1 = (uint16_t *)memalign(64, sizeof(uint16_t) * 16);
     _palette2 = (uint16_t *)memalign(64, sizeof(uint16_t) * 16);

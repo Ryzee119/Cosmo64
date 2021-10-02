@@ -2,13 +2,13 @@ ifndef EP
 $(error Cosmo Episode not specified: use make EP=1, 2 or 3)
 endif
 
+SOURCE_DIR = $(CURDIR)
 BUILD_DIR = build
 COSMO_DIR = cosmo-engine/src
-
 include n64.mk
 
-CFLAGS += -I$(COSMO_DIR) -In64/SDL -I$(N64_ROOTDIR)/include -DEP$(EP)
-LDFLAGS += -L$(N64_ROOTDIR)/lib -lmikmod
+CFLAGS += -I$(COSMO_DIR) -In64/SDL -I$(N64_ROOTDIR)/include -DEP$(EP) -Iugfx
+LDFLAGS += -L$(N64_ROOTDIR)/lib -L$(CURDIR) 
 
 SRCS = \
 	n64_main.c \
@@ -17,6 +17,7 @@ SRCS = \
 	n64_music.c \
 	n64_sfx.c \
 	n64_video.c \
+	ugfx/ugfx.c \
 	$(COSMO_DIR)/actor_collision.c \
 	$(COSMO_DIR)/actor_toss.c \
 	$(COSMO_DIR)/actor_worktype.c \
@@ -48,7 +49,7 @@ PROG_NAME = cosmo64_ep$(EP)
 all: $(PROG_NAME).z64
 
 $(BUILD_DIR)/$(PROG_NAME).dfs: $(wildcard filesystem/*)
-$(BUILD_DIR)/$(PROG_NAME).elf: $(SRCS:%.c=$(BUILD_DIR)/%.o)
+$(BUILD_DIR)/$(PROG_NAME).elf: $(SRCS:%.c=$(BUILD_DIR)/%.o) $(BUILD_DIR)/ugfx/rsp_ugfx.o
 
 $(PROG_NAME).z64: N64_ROM_TITLE="$(PROG_NAME)"
 $(PROG_NAME).z64: $(BUILD_DIR)/$(PROG_NAME).dfs
