@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 
+#include <libdragon.h>
 #include <stdio.h>
 #include "sound/audio.h"
 #include "sound/music.h"
@@ -14,12 +15,42 @@
 #include "b800.h"
 #include "input.h"
 
+extern char *save_directory;
 void cosmo_audio_init();
 int cleanup_and_exit();
 
+typedef struct sram_files_t
+{
+    const char *name;
+    uint32_t size;
+    uint32_t offset;
+} sram_files_t;
+int sramfs_init(sram_files_t *files, int num_files);
+#define MAX_SRAM_FILES 10
+static sram_files_t sram_files[MAX_SRAM_FILES] = {
+    {"COSMO1.CFG", 256, 0},
+    {"COSMO1.SV1", 128, 0},
+    {"COSMO1.SV2", 128, 0},
+    {"COSMO1.SV3", 128, 0},
+    {"COSMO1.SV4", 128, 0},
+    {"COSMO1.SV5", 128, 0},
+    {"COSMO1.SV6", 128, 0},
+    {"COSMO1.SV7", 128, 0},
+    {"COSMO1.SV8", 128, 0},
+    {"COSMO1.SV9", 128, 0},
+};
+
 int main(void)
 {
+    debug_init(DEBUG_FEATURE_LOG_ISVIEWER);
+    dfs_init(DFS_DEFAULT_LOCATION);
+    init_interrupts();
+
+    save_directory = malloc(32);
+    strcpy(save_directory, "sram:/");
     load_config_from_command_line(0, NULL);
+
+    sramfs_init(sram_files, MAX_SRAM_FILES);
 
     #ifdef EP3
 	set_episode_number(3);

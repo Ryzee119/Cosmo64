@@ -17,6 +17,7 @@ SRCS = \
 	n64_music.c \
 	n64_sfx.c \
 	n64_video.c \
+	n64_save.c \
 	n64/ugfx/ugfx.c \
 	$(COSMO_DIR)/actor_collision.c \
 	$(COSMO_DIR)/actor_toss.c \

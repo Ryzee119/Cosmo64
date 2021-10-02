@@ -50,9 +50,6 @@ bool init_surface(VideoSurface *surface, int width, int height)
 
 bool video_init()
 {
-    debug_init(DEBUG_FEATURE_LOG_ISVIEWER);
-    dfs_init(DFS_DEFAULT_LOCATION);
-    init_interrupts();
     display_init(RESOLUTION_320x240, DEPTH_16_BPP, 2, GAMMA_NONE, ANTIALIAS_RESAMPLE_FETCH_ALWAYS);
     ugfx_init(UGFX_DEFAULT_RDP_BUFFER_SIZE);
 
