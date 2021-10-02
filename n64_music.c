@@ -135,9 +135,9 @@ void play_music()
     music.bits = 16;
     music.channels = 1;
     music.frequency = MUSIC_SAMPLE_RATE;
-    music.len = music_data_length;
+    music.len = 0;
     music.read = music_read;
-    music.loop_len = music_data_length;
+    music.loop_len = WAVEFORM_UNKNOWN_LEN;
     music.ctx = (void *)&music;
     mixer_ch_play(MUSIC_CHANNEL, &music);
 }
