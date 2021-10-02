@@ -46,11 +46,14 @@ SRCS = \
 	$(COSMO_DIR)/files/file.c \
 	$(COSMO_DIR)/files/vol.c
 
+ED64ROMCONFIGFLAGS = --savetype sram256k
+
 PROG_NAME = cosmo64_ep$(EP)
 all: $(PROG_NAME).z64
 
-$(BUILD_DIR)/$(PROG_NAME).dfs: $(wildcard filesystem/*)
+$(BUILD_DIR)/$(PROG_NAME).dfs: filesystem/COSMO.STN filesystem/COSMO$(EP).VOL
 $(BUILD_DIR)/$(PROG_NAME).elf: $(SRCS:%.c=$(BUILD_DIR)/%.o) $(BUILD_DIR)/n64/ugfx/rsp_ugfx.o
+
 
 $(PROG_NAME).z64: N64_ROM_TITLE="$(PROG_NAME)"
 $(PROG_NAME).z64: $(BUILD_DIR)/$(PROG_NAME).dfs

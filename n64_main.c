@@ -23,10 +23,38 @@ typedef struct sram_files_t
 {
     const char *name;
     uint32_t size;
-    uint32_t offset;
+    uint32_t offset; //Track position of the file cursor
 } sram_files_t;
 int sramfs_init(sram_files_t *files, int num_files);
+
 #define MAX_SRAM_FILES 10
+#ifdef EP3
+static sram_files_t sram_files[MAX_SRAM_FILES] = {
+    {"COSMO3.CFG", 256, 0},
+    {"COSMO3.SV1", 128, 0},
+    {"COSMO3.SV2", 128, 0},
+    {"COSMO3.SV3", 128, 0},
+    {"COSMO3.SV4", 128, 0},
+    {"COSMO3.SV5", 128, 0},
+    {"COSMO3.SV6", 128, 0},
+    {"COSMO3.SV7", 128, 0},
+    {"COSMO3.SV8", 128, 0},
+    {"COSMO3.SV9", 128, 0},
+};
+#elif EP2
+static sram_files_t sram_files[MAX_SRAM_FILES] = {
+    {"COSMO2.CFG", 256, 0},
+    {"COSMO2.SV1", 128, 0},
+    {"COSMO2.SV2", 128, 0},
+    {"COSMO2.SV3", 128, 0},
+    {"COSMO2.SV4", 128, 0},
+    {"COSMO2.SV5", 128, 0},
+    {"COSMO2.SV6", 128, 0},
+    {"COSMO2.SV7", 128, 0},
+    {"COSMO2.SV8", 128, 0},
+    {"COSMO2.SV9", 128, 0},
+};
+#else
 static sram_files_t sram_files[MAX_SRAM_FILES] = {
     {"COSMO1.CFG", 256, 0},
     {"COSMO1.SV1", 128, 0},
@@ -39,6 +67,7 @@ static sram_files_t sram_files[MAX_SRAM_FILES] = {
     {"COSMO1.SV8", 128, 0},
     {"COSMO1.SV9", 128, 0},
 };
+#endif
 
 int main(void)
 {
