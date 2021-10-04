@@ -15,7 +15,7 @@
 
 #define SFX_NUM_CHANNELS 1
 #define SFX_BYTES_PER_SAMPLE 2
-#define SFX_AUDIO_SAMPLE_RATE 44100
+#define SFX_AUDIO_SAMPLE_RATE 22050
 #define SFX_CHANNELS 15
 
 uint8 sfx_on_flag = 1;
