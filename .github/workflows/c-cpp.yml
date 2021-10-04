@@ -28,16 +28,14 @@ jobs:
            export BUILD_TAG=build-$(date -u +'%Y%m%d%H%M')
            echo "BUILD_TAG=$BUILD_TAG" >> $GITHUB_ENV
            sudo npm install -g libdragon
-           sudo libdragon download
-           sudo libdragon start
-           git clone https://github.com/rasky/libdragon.git
+           sudo libdragon init
            cd libdragon
-           git checkout mixer
-           docker exec libdragon cp libdragon/include/rsp.inc /usr/local/mips64-elf/include
-           docker exec libdragon cp libdragon/include/rsp_dma.inc /usr/local/mips64-elf/include
-           docker exec -w /libdragon/libdragon libdragon make
-           docker exec -w /libdragon/libdragon libdragon make install
- 
+           git remote add mixer https://github.com/rasky/libdragon.git
+           git fetch mixer
+           git checkout mixer/mixer
+           cd ..
+           libdragon update
+
     - name: Compile
       run: |
            libdragon make EP=1
