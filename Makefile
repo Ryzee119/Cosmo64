@@ -8,6 +8,9 @@ COSMO_DIR = cosmo-engine/src
 include n64.mk
 
 CFLAGS += -I$(COSMO_DIR) -In64/SDL -I$(N64_ROOTDIR)/include -DEP$(EP) -In64/ugfx
+#100ms per frame is the original game speed. If you find this too slow and you can decrease this here
+#This is speed up the game
+CFLAGS += -DCOSMO_INTERVAL=100
 LDFLAGS += -L$(N64_ROOTDIR)/lib -L$(CURDIR) 
 
 SRCS = \
