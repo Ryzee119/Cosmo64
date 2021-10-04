@@ -113,6 +113,10 @@ void load_music(uint16 new_music_index)
     }
 
     music_index = new_music_index;
+    if (music_data != NULL)
+    {
+        free(music_data);
+    }
     music_data = load_file_in_new_buf(music_filename_tbl[music_index], &music_data_length);
     assert(music_data != NULL);
     play_music();
