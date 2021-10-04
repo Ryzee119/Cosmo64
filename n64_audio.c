@@ -5,9 +5,9 @@
 #include "sound/audio.h"
 #include "sound/music.h"
 
-#define AUDIO_DESIRED_SAMPLE_RATE 22050
-#define AUDIO_DESIRED_NUM_CHANNELS 1
-static timer_link_t *audio_timer;
+#define AUDIO_DESIRED_SAMPLE_RATE 44100
+#define AUDIO_DESIRED_NUM_CHANNELS 2
+#define AUDIO_BYTES_PER_SAMPLE 2
 void sfx_close(void);
 void music_close(void);
 
@@ -20,12 +20,9 @@ void cosmo_audio_init()
         return;
     }
 
-    audio_init(AUDIO_DESIRED_SAMPLE_RATE, 4);
+    audio_init(AUDIO_DESIRED_SAMPLE_RATE, 2);
 	mixer_init(16);  // Initialize up to 16 channels
     timer_init();
-    audioConfig.bytesPerSample = 2;
-    audioConfig.numChannels = 1;
-    audioConfig.sampleRate = AUDIO_DESIRED_SAMPLE_RATE;
     audioConfig.format = AUDIO_INT16_SIGNED_LSB;
     audioConfig.enabled = true;
     music_init();
@@ -38,7 +35,6 @@ void audio_shutdown()
         return;
     }
 
-    delete_timer(audio_timer);
     sfx_close();
     music_close();
     audio_close();

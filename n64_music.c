@@ -11,7 +11,7 @@
 #define ADLIB_OP_SIZE 4
 #define MUSIC_NUM_CHANNELS 1
 #define MUSIC_BYTES_PER_SAMPLE 2
-#define MUSIC_SAMPLE_RATE 9600
+#define MUSIC_SAMPLE_RATE 19200
 #define MUSIC_CHANNEL 0
 
 uint8 music_on_flag = 1;
@@ -87,8 +87,8 @@ static void music_read(void *ctx, samplebuffer_t *sbuf, int wpos, int wlen, bool
 {
     (void)ctx;
     uint8_t *dst = CachedAddr(samplebuffer_append(sbuf, wlen));
-    generate_music(dst, wlen * 2);
-    data_cache_hit_writeback_invalidate(dst, 2 * wlen);
+    generate_music(dst, wlen * MUSIC_NUM_CHANNELS * MUSIC_BYTES_PER_SAMPLE);
+    data_cache_hit_writeback_invalidate(dst, wlen * NUM_CHANNELS * MUSIC_BYTES_PER_SAMPLE);
 }
 
 void load_music(uint16 new_music_index)
@@ -133,7 +133,7 @@ void stop_music()
 void play_music()
 {
     music.bits = 16;
-    music.channels = 1;
+    music.channels = MUSIC_NUM_CHANNELS;
     music.frequency = MUSIC_SAMPLE_RATE;
     music.len = 0;
     music.read = music_read;

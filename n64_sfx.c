@@ -9,13 +9,13 @@
 #include "files/file.h"
 #include "game.h"
 
-#define SFX_SAMPLE_RATE 140
+#define SFX_ADLIB_SAMPLE_RATE 140
 #define PC_PIT_RATE 1193181
 #define WAVE_AMPLITUDE_VALUE 3500
 
 #define SFX_NUM_CHANNELS 1
 #define SFX_BYTES_PER_SAMPLE 2
-#define SFX_AUDIO_SAMPLE_RATE 22050
+#define SFX_AUDIO_SAMPLE_RATE 44100
 #define SFX_CHANNELS 15
 
 uint8 sfx_on_flag = 1;
@@ -54,16 +54,16 @@ static int get_num_samples(File *file, int offset, int index, int total)
 
 static void writeSample(uint8_t *buf, uint16_t index, int16_t sample)
 {
-    *(sint16 *)(buf + index * audioConfig.numChannels * audioConfig.bytesPerSample) = sample;
-    if (audioConfig.numChannels == 2)
+    *(sint16 *)(buf + index * SFX_NUM_CHANNELS * SFX_BYTES_PER_SAMPLE) = sample;
+    if (SFX_NUM_CHANNELS == 2)
     {
-        *(sint16 *)(buf + index * audioConfig.numChannels * audioConfig.bytesPerSample + audioConfig.bytesPerSample) = sample;
+        *(sint16 *)(buf + index * SFX_NUM_CHANNELS * SFX_BYTES_PER_SAMPLE + SFX_BYTES_PER_SAMPLE) = sample;
     }
 }
 
 static void convert_sfx_to_wave(Sfx *chunk, File *file, int offset, int num_samples)
 {
-    int sample_length = (SFX_AUDIO_SAMPLE_RATE / SFX_SAMPLE_RATE);
+    int sample_length = (SFX_AUDIO_SAMPLE_RATE / SFX_ADLIB_SAMPLE_RATE);
     chunk->alen = num_samples * sample_length * SFX_NUM_CHANNELS;
     chunk->abuf = (int16_t *)malloc(chunk->alen * SFX_BYTES_PER_SAMPLE);
     assert(chunk->abuf != NULL);
@@ -99,7 +99,7 @@ static void convert_sfx_to_wave(Sfx *chunk, File *file, int offset, int num_samp
     }
     waveform_t *header = &chunk->wave;
     header->bits = SFX_BYTES_PER_SAMPLE * 8;
-    header->channels = 1;
+    header->channels = SFX_NUM_CHANNELS;
     header->frequency = SFX_AUDIO_SAMPLE_RATE;
     header->len = chunk->alen;
     header->loop_len = 0;
@@ -139,7 +139,7 @@ void play_sfx(int sfx_number)
         return;
 
     sfx_number--;
-    for (int channel = 1; channel < SFX_CHANNELS; channel++)
+    for (int channel = 2; channel < SFX_CHANNELS; channel++)
     {
         if (!mixer_ch_playing(channel))
         {
