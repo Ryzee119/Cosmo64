@@ -15,7 +15,7 @@
 
 #define SFX_NUM_CHANNELS 1
 #define SFX_BYTES_PER_SAMPLE 2
-#define SFX_AUDIO_SAMPLE_RATE 44100
+#define SFX_AUDIO_SAMPLE_RATE 22050
 #define SFX_CHANNELS 15
 
 uint8 sfx_on_flag = 1;
@@ -128,6 +128,7 @@ static int load_sfx_file(const char *filename, int sfx_offset)
 
 void load_sfx()
 {
+    return;
     int sfx_offset = load_sfx_file("SOUNDS.MNI", 0);
     sfx_offset += load_sfx_file("SOUNDS2.MNI", sfx_offset);
     load_sfx_file("SOUNDS3.MNI", sfx_offset);
@@ -135,6 +136,7 @@ void load_sfx()
 
 void play_sfx(int sfx_number)
 {
+    return;
     if (!sfx_number)
         return;
 
