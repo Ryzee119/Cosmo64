@@ -29,14 +29,15 @@ jobs:
            echo "BUILD_TAG=$BUILD_TAG" >> $GITHUB_ENV
            sudo npm install -g libdragon
            sudo npm rebuild libdragon
+           echo Init libdragon docker
            sudo libdragon init
+           echo Checking out mixer repo
            cd libdragon
            git remote add mixer https://github.com/rasky/libdragon.git
            git fetch mixer
            git checkout mixer/mixer
            cd ..
            libdragon update
-           libdragon start
 
     - name: Compile
       run: |
