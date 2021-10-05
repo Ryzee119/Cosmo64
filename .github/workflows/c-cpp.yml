@@ -28,6 +28,7 @@ jobs:
            export BUILD_TAG=build-$(date -u +'%Y%m%d%H%M')
            echo "BUILD_TAG=$BUILD_TAG" >> $GITHUB_ENV
            sudo npm install -g libdragon
+           sudo npm rebuild node-sass
            sudo libdragon init
            cd libdragon
            git remote add mixer https://github.com/rasky/libdragon.git
