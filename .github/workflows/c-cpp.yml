@@ -30,17 +30,17 @@ jobs:
            wget https://github.com/anacierdem/libdragon-docker/releases/download/v10.0.0/libdragon-linux-x86_64.tar.gz
            tar xvzf libdragon-linux-x86_64.tar.gz
            sudo chmod +x libdragon
-           sudo libdragon init
+           ./libdragon init
            cd libdragon
            git remote add mixer https://github.com/rasky/libdragon.git
            git fetch mixer
            git checkout mixer/mixer
            cd ..
-           libdragon update
+           ./libdragon update
 
     - name: Compile
       run: |
-           libdragon make EP=1
+           ./libdragon make EP=1
            cp cosmo-engine/LICENSE LICENSE
 
     - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
