@@ -5,7 +5,7 @@ endif
 SOURCE_DIR = $(CURDIR)
 BUILD_DIR = build
 COSMO_DIR = cosmo-engine/src
-include n64.mk
+include $(N64_INST)/include/n64.mk
 
 CFLAGS += -I$(COSMO_DIR) -In64/SDL -I$(N64_ROOTDIR)/include -DEP$(EP) -In64/ugfx
 #100ms per frame is the original game speed. If you find this too slow and you can decrease this here
