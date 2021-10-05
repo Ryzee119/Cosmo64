@@ -35,6 +35,7 @@ jobs:
            git checkout mixer/mixer
            cd ..
            libdragon update
+           libdragon start
 
     - name: Compile
       run: |
