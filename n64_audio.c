@@ -21,7 +21,7 @@ void cosmo_audio_init()
     }
 
     audio_init(AUDIO_DESIRED_SAMPLE_RATE, 2);
-	mixer_init(16);  // Initialize up to 16 channels
+    mixer_init(16);  // Initialize up to 16 channels
     timer_init();
     audioConfig.format = AUDIO_INT16_SIGNED_LSB;
     audioConfig.enabled = true;
