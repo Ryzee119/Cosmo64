@@ -37,7 +37,7 @@ jobs:
            git fetch mixer
            git checkout mixer/mixer
            cd ..
-           ./_libdragon instal
+           ./_libdragon install
 
     - name: Compile
       run: |
