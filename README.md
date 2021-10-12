@@ -15,14 +15,11 @@ The other 2 episodes are supported, however need files from the original game:
 * To play episode three, copy `COSMO3.VOL` into `filesystem` and recompile with 'EP=3' flag.
 
 ## Build
-This was developed using the opensource N64 toolchain [libdragon](https://github.com/DragonMinded/libdragon). I developed it using the official docker container. The build process is something like this (Fixme. The project relies on unmerged PRs so this wont work):
+This was developed using the opensource N64 toolchain [libdragon](https://github.com/DragonMinded/libdragon). I developed it using the official docker container. The build process is something like this (after setting up the docker image as per the instructions):
 ```
-apt-get install npm docker.io
 git clone --recursive https://github.com/Ryzee119/Cosmo64.git
 cd Cosmo64
-npm install -g libdragon
-libdragon download
-libdragon start
+libdragon init
 
 #Build Episode 1 (The shareware game files are already setup ready to go)
 libdragon make EP=1
