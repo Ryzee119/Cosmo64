@@ -7,11 +7,13 @@ BUILD_DIR = build
 COSMO_DIR = cosmo-engine/src
 include $(N64_INST)/include/n64.mk
 
-CFLAGS += -I$(COSMO_DIR) -In64/SDL -I$(N64_ROOTDIR)/include -DEP$(EP) -In64/ugfx
-#100ms per frame is the original game speed. If you find this too slow and you can decrease this here
-#This is speed up the game
-CFLAGS += -DCOSMO_INTERVAL=100
-LDFLAGS += -L$(N64_ROOTDIR)/lib -L$(CURDIR) 
+PROG_NAME = cosmo64_ep$(EP)
+N64_ROM_SAVETYPE = sram256k
+N64_ROM_REGIONFREE = true
+
+N64_CFLAGS += -Wno-error #Disable -Werror from n64.mk
+CFLAGS += -I$(COSMO_DIR) -DEP$(EP) -In64/ugfx -In64/SDL
+CFLAGS += -DCOSMO_INTERVAL=100 #Make the game play faster by lowering (100 is original game speed)
 
 SRCS = \
 	n64_main.c \
@@ -49,14 +51,10 @@ SRCS = \
 	$(COSMO_DIR)/files/file.c \
 	$(COSMO_DIR)/files/vol.c
 
-ED64ROMCONFIGFLAGS = --savetype sram256k
-
-PROG_NAME = cosmo64_ep$(EP)
 all: $(PROG_NAME).z64
 
 $(BUILD_DIR)/$(PROG_NAME).dfs: filesystem/COSMO.STN filesystem/COSMO$(EP).VOL
 $(BUILD_DIR)/$(PROG_NAME).elf: $(SRCS:%.c=$(BUILD_DIR)/%.o) $(BUILD_DIR)/n64/ugfx/rsp_ugfx.o
-
 
 $(PROG_NAME).z64: N64_ROM_TITLE="$(PROG_NAME)"
 $(PROG_NAME).z64: $(BUILD_DIR)/$(PROG_NAME).dfs
