@@ -29,7 +29,6 @@ uint8 byte_2E17C;
 
 bool input_init()
 {
-    init_interrupts();
     controller_init();
     reset_player_control_inputs();
     return true;
