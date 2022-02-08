@@ -73,7 +73,6 @@ int main(void)
 {
     debug_init(DEBUG_FEATURE_LOG_ISVIEWER);
     dfs_init(DFS_DEFAULT_LOCATION);
-    init_interrupts();
 
     save_directory = malloc(32);
     strcpy(save_directory, "sram:/");
