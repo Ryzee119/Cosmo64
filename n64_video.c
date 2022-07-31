@@ -8,7 +8,7 @@
 #include "tile.h"
 #include "input.h"
 #include "b800_font.h"
-#include "ugfx.h"
+#include "rdp.h"
 
 #define VideoSurface SDL_Surface
 
@@ -16,15 +16,17 @@ static VideoSurface game_surface;
 static VideoSurface text_surface;
 
 static display_context_t disp = 0;
-static ugfx_buffer_t *render_commands;
 static uint32_t display_width;
 static uint32_t display_height;
 
 static bool palette_dirty = false;
 static uint16_t *_palette1;
 static uint16_t *_palette2;
-static const uint8_t GAME_PALETTE = 1;
-static const uint8_t TEXT_PALETTE = 2;
+static const uint8_t TEX_TILE = 0;
+static const uint8_t GAME_PALETTE_SLOT = 0;
+static const uint8_t TEXT_PALETTE_SLOT = 1;
+static const uint8_t GAME_PALETTE_TILE = 2;
+static const uint8_t TEXT_PALETTE_TILE = 3;
 
 static bool is_game_mode = true;
 static bool video_has_initialised = false;
@@ -52,7 +54,8 @@ bool init_surface(VideoSurface *surface, int width, int height)
 bool video_init()
 {
     display_init(RESOLUTION_320x240, DEPTH_16_BPP, 2, GAMMA_NONE, ANTIALIAS_RESAMPLE_FETCH_ALWAYS);
-    ugfx_init(UGFX_DEFAULT_RDP_BUFFER_SIZE);
+    rdp_init();
+    rdpq_set_fill_color(RGBA32(0,0,0,255));
 
     display_width = 320;
     display_height = 240;
@@ -75,27 +78,16 @@ bool video_init()
     data_cache_hit_writeback_invalidate(_palette2, sizeof(uint16_t) * 16);
 
     //Load the Game and Text palette into TMEM into Tile 2 and 3
-    ugfx_command_t commands[] = {
-        //Load the Game palette
-        ugfx_set_tile(UGFX_FORMAT_INDEX, UGFX_PIXEL_SIZE_4B, 16, 0x800 + (GAME_PALETTE * 0x100), 2, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-        ugfx_set_texture_image((uint32_t)_palette1, UGFX_FORMAT_INDEX, UGFX_PIXEL_SIZE_16B, 16 - 1),
-        ugfx_load_tlut(0 << 2, 0, 15 << 2, 0, 2),
-        ugfx_sync_tile(),
+    rdpq_set_tile(GAME_PALETTE_TILE, FMT_CI4, 0x800 + (GAME_PALETTE_SLOT * 0x80), 16, 0);
+    rdpq_set_texture_image(_palette1, FMT_RGBA16, 16);
+    rdpq_load_tlut(GAME_PALETTE_TILE, 0, 15);
 
-        //Load the 'DOS' text screen palette
-        ugfx_set_tile(UGFX_FORMAT_INDEX, UGFX_PIXEL_SIZE_4B, 16, 0x800 + (TEXT_PALETTE * 0x100), 3, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-        ugfx_set_texture_image((uint32_t)_palette2, UGFX_FORMAT_INDEX, UGFX_PIXEL_SIZE_16B, 16 - 1),
-        ugfx_load_tlut(0 << 2, 0, 15 << 2, 0, 3),
-        ugfx_sync_tile(),
+    rdpq_set_tile(TEXT_PALETTE_TILE, FMT_CI4, 0x800 + (TEXT_PALETTE_SLOT * 0x80), 16, 0);
+    rdpq_set_texture_image(_palette2, FMT_RGBA16, 16);
+    rdpq_load_tlut(TEXT_PALETTE_TILE, 0, 15);
 
-        ugfx_sync_full(),
-        ugfx_finalize(),
-    };
-    data_cache_hit_writeback(commands, sizeof(commands));
-    ugfx_load(commands, sizeof(commands) / sizeof(*commands));
-    rsp_run();
-
-    render_commands = ugfx_buffer_new(2048);
+    rdpq_sync_full(NULL, NULL);
+    rspq_flush();
 
     set_game_mode();
     video_has_initialised = true;
@@ -105,8 +97,7 @@ bool video_init()
 
 void video_shutdown()
 {
-    ugfx_close();
-    ugfx_buffer_free(render_commands);
+    rdp_close();
     free(_palette1);
     free(_palette2);
     free(game_surface.format->palette);
@@ -138,7 +129,7 @@ void set_game_mode()
 void video_update()
 {
     VideoSurface *src = is_game_mode ? &game_surface : &text_surface;
-    uint8_t pal_slot = is_game_mode ? GAME_PALETTE : TEXT_PALETTE;
+    uint8_t pal_slot = is_game_mode ? GAME_PALETTE_SLOT : TEXT_PALETTE_SLOT;
     data_cache_hit_writeback_invalidate(src->pixels, src->w * src->h);
 
     //We draw the screen from top to bottom.
@@ -151,60 +142,41 @@ void video_update()
     assert(chunk_size <= 2048);
 
     while (!(disp = display_lock()));
-    ugfx_buffer_clear(render_commands);
-    ugfx_buffer_push(render_commands, ugfx_set_display(disp));
-    ugfx_buffer_push(render_commands, ugfx_set_scissor(0, 0, display_width << 2, display_height << 2, UGFX_SCISSOR_DEFAULT));
-    ugfx_buffer_push(render_commands, ugfx_set_other_modes(UGFX_CYCLE_COPY | UGFX_TLUT_RGBA16));
-    ugfx_buffer_push(render_commands, ugfx_sync_pipe());
+
+    rdp_attach(disp);
+    rdpq_set_other_modes_raw(SOM_CYCLE_COPY | SOM_ENABLE_TLUT_RGB16);
 
     if (palette_dirty)
     {
-        ugfx_buffer_push(render_commands, ugfx_set_tile(UGFX_FORMAT_INDEX, UGFX_PIXEL_SIZE_4B, 16, 0x800 + (GAME_PALETTE * 0x100), 2, 0, 0, 0, 0, 0, 0, 0, 0, 0));
-        ugfx_buffer_push(render_commands, ugfx_set_texture_image((uint32_t)_palette1, UGFX_FORMAT_INDEX, UGFX_PIXEL_SIZE_16B, 16 - 1));
-        ugfx_buffer_push(render_commands, ugfx_load_tlut(0 << 2, 0, 15 << 2, 0, 2));
-        ugfx_buffer_push(render_commands, ugfx_sync_tile());
+        rdpq_set_tile(GAME_PALETTE_TILE, FMT_CI4, 0x800 + (GAME_PALETTE_SLOT * 0x80), 16, 0);
+        rdpq_set_texture_image(_palette1, FMT_RGBA16, 16);
+        rdpq_load_tlut(GAME_PALETTE_TILE, 0, 15);
         palette_dirty = false;
     }
 
     uint8_t *ptr = src->pixels;
     while (current_y < 240)
     {
-        //Load the 8bit texture into tile 0:
-        ugfx_buffer_push(render_commands, ugfx_set_tile(UGFX_FORMAT_INDEX, UGFX_PIXEL_SIZE_8B, x_per_loop / 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
-        ugfx_buffer_push(render_commands, ugfx_set_texture_image((uint32_t)ptr, UGFX_FORMAT_INDEX, UGFX_PIXEL_SIZE_8B, x_per_loop - 1));
-        ugfx_buffer_push(render_commands, ugfx_load_tile(0 << 2, 0 << 2, (x_per_loop - 1) << 2, (y_per_loop - 1) << 2, 0));
-        ugfx_buffer_push(render_commands, ugfx_sync_tile());
+        // Load the 8bit indexed texture into TEX_TILE with the associated palette
+        rdpq_set_tile(TEX_TILE, FMT_CI8, 0x0000, x_per_loop, pal_slot);
+        rdpq_set_texture_image(ptr, FMT_CI8, x_per_loop);
+        rdpq_load_tile(TEX_TILE, 0, 0, x_per_loop, y_per_loop);
 
-        //Apply the palette onto the loaded tile, then set it to tile 1:
-        ugfx_buffer_push(render_commands, ugfx_set_tile(UGFX_FORMAT_INDEX, UGFX_PIXEL_SIZE_8B, x_per_loop / 8, 0, 1, pal_slot, 0, 0, 0, 0, 0, 0, 0, 0));
-        ugfx_buffer_push(render_commands, ugfx_set_tile_size(0, 0, (x_per_loop - 1) << 2, (y_per_loop - 1) << 2, 1));
-
-        //Draw a line from tile 1
-        ugfx_buffer_push(render_commands, ugfx_texture_rectangle(1, 0, current_y << 2, x_per_loop << 2, (current_y + 1) << 2));
-        ugfx_buffer_push(render_commands, ugfx_texture_rectangle_tcoords(0 << 5, 0 << 5, 4 << 10, 1 << 10));
+        // Draw a line from TEX_TILE
+        rdpq_texture_rectangle(TEX_TILE, 0, current_y, x_per_loop, (current_y + 1), 0, 0, 1, 1);
         current_y++;
 
         if (is_game_mode)
         {
-            //Can draw 5 lines at once at this games standard surface width, note the 1st line is drawn twice so that over 200 lines it is scaled to 240)
-            ugfx_buffer_push(render_commands, ugfx_texture_rectangle(1, 0, (current_y) << 2, x_per_loop << 2, (current_y + y_per_loop - 1) << 2));
-            ugfx_buffer_push(render_commands, ugfx_texture_rectangle_tcoords(0 << 5, 0 << 5, 4 << 10, 1 << 10));
+            //Can draw 5 lines at once at this games standard surface width, note the 1st line is
+            //drawn twice so that over 200 lines it is scaled to 240)
+            rdpq_texture_rectangle(TEX_TILE, 0, current_y, x_per_loop, (current_y + y_per_loop), 0, 0, 1, 1);
             current_y += y_per_loop;
         }
         ptr += chunk_size;
     }
 
-    ugfx_buffer_push(render_commands, ugfx_sync_pipe());
-    ugfx_buffer_push(render_commands, ugfx_sync_full());
-    ugfx_buffer_push(render_commands, ugfx_finalize());
-
-    data_cache_hit_writeback(ugfx_buffer_data(render_commands), ugfx_buffer_length(render_commands) * sizeof(ugfx_command_t));
-    ugfx_load(ugfx_buffer_data(render_commands), ugfx_buffer_length(render_commands));
-
-    rsp_run_async();
-    SDL_Delay(0); //Pump audio backend update
-    rsp_wait();
-    display_show(disp);
+    rdp_auto_show_display(disp);
 }
 
 void video_draw_tile(Tile *tile, uint16 x, uint16 y)
