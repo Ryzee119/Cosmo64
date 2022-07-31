@@ -3,4 +3,5 @@
 	url = https://github.com/Ryzee119/cosmo-engine.git
 [submodule "libdragon"]
 	path = libdragon
-	url = https://github.com/rasky/libdragon.git
+	url = https://github.com/DragonMinded/libdragon
+	branch = trunk
