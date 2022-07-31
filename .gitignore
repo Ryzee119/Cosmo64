@@ -2,7 +2,6 @@
 .cen64
 .libdragon
 build
-libdragon
 *.z64
 *.bin
 filesystem/COSMO2.VOL
