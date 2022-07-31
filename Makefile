@@ -12,7 +12,7 @@ N64_ROM_SAVETYPE = sram256k
 N64_ROM_REGIONFREE = true
 
 N64_CFLAGS += -Wno-error #Disable -Werror from n64.mk
-CFLAGS += -I$(COSMO_DIR) -DEP$(EP) -In64/ugfx -In64/SDL
+CFLAGS += -I$(COSMO_DIR) -DEP$(EP) -In64/SDL -O2
 CFLAGS += -DCOSMO_INTERVAL=100 #Make the game play faster by lowering (100 is original game speed)
 
 SRCS = \
@@ -23,7 +23,6 @@ SRCS = \
 	n64_sfx.c \
 	n64_video.c \
 	n64_save.c \
-	n64/ugfx/ugfx.c \
 	$(COSMO_DIR)/actor_collision.c \
 	$(COSMO_DIR)/actor_toss.c \
 	$(COSMO_DIR)/actor_worktype.c \
@@ -54,7 +53,7 @@ SRCS = \
 all: $(PROG_NAME).z64
 
 $(BUILD_DIR)/$(PROG_NAME).dfs: filesystem/COSMO.STN filesystem/COSMO$(EP).VOL
-$(BUILD_DIR)/$(PROG_NAME).elf: $(SRCS:%.c=$(BUILD_DIR)/%.o) $(BUILD_DIR)/n64/ugfx/rsp_ugfx.o
+$(BUILD_DIR)/$(PROG_NAME).elf: $(SRCS:%.c=$(BUILD_DIR)/%.o)
 
 $(PROG_NAME).z64: N64_ROM_TITLE="$(PROG_NAME)"
 $(PROG_NAME).z64: $(BUILD_DIR)/$(PROG_NAME).dfs
